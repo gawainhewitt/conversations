@@ -1,0 +1,20 @@
+{
+  "name": "imagined_landscapes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "build": "rm -rf ./dist/* && mkdir ./dist/css && cp ./index.html ./dist/index.html && cp ./css/main.css ./dist/css/main.css && cp ./main.js ./dist/main.js && cp ./p5.min.js ./dist/p5.min.js && cp -avr ./images/ ./dist/ && cp -avr ./sounds/ ./dist/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gawainhewitt/imagined_landscapes.git"
+  },
+  "keywords": [],
+  "author": "Gawain Hewitt",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gawainhewitt/imagined_landscapes/issues"
+  },
+  "homepage": "https://github.com/gawainhewitt/imagined_landscapes#readme"
+}
