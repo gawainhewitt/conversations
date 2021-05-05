@@ -61,12 +61,12 @@ let seqWidth;
 let seqHeight;
 let looper2width;
 
-let one = 'loop1_5bars';
-let two = 'loop2_2bars';
-let three = 'loop3_2bars';
-let four = 'loop4_2bars';
-let five = 'loop5_14bars';
-let six = 'loop6_free';
+let one = 'loop1';
+let two = 'loop2';
+let three = 'loop3';
+let four = 'loop4';
+let five = 'loop5';
+let six = 'loop6';
 
 let stepName = new Array;
 
@@ -91,7 +91,7 @@ let playerArray = [player1, player2, player3, player4, player5, player6];
 
 let seqBuffers = new Array;
 
-let originalTempo = 85;
+let originalTempo = 100;
 Tone.Transport.bpm.value = originalTempo;
 Tone.Transport.loopEnd.value = "8m";
 console.log(`bpm ${Math.round(Tone.Transport.bpm.value)}`);
@@ -420,7 +420,7 @@ function startAudio() {
       "fadeIn": 0,
       "fadeOut": 0,
       "loop": true,
-      "loopEnd": "69.854",
+      "loopEnd": "54.23",
       "loopStart": 0,
       "playbackRate": 1,
       "reverse": false
@@ -432,7 +432,7 @@ function startAudio() {
     seqPlayers[i].set(
       {
         "mute": false,
-        "volume": -10,
+        "volume": -20,
         "autostart": false,
         "fadeIn": 0,
         "fadeOut": 0,
@@ -445,7 +445,7 @@ function startAudio() {
 
   Tone.Transport.start();
   Tone.Transport.scheduleRepeat(repeat, '8n'); // call our function 'repeat' every x time (8n or an 8th note in this case)
-  Tone.Transport.scheduleRepeat(play_ = () => {player1.start();}, '5m');
+  Tone.Transport.scheduleRepeat(play_ = () => {player1.start();}, '2m');
   Tone.Transport.scheduleRepeat(play_ = () => {player2.start();}, '2m');
   Tone.Transport.scheduleRepeat(play_ = () => {player3.start();}, '2m');
   Tone.Transport.scheduleRepeat(play_ = () => {player4.start();}, '2m');
@@ -583,7 +583,7 @@ let index = 0;
         A3: "step1.flac",
         G3: "step2.flac",
         E3: "step3.flac",
-        D3: "loop1_5bars.flac"
+        D3: "loop1.flac"
       },
       baseUrl: "/sounds/",
     // 	onload: () => {
