@@ -1,31 +1,38 @@
 // sizing and resizing dynamically is happening in css #mycanvas and #parentdiv - overrides what's happening in here
 
-//getting there!
+//look at correct way to tie images and sound in tone
+
+// add boolean for monophonic or polyphonic looper
+
+// is the site in fact going at half speed?
+
+// better touch and mouse implementation
+
+//save to bring up a clearer dialogue
 
 let theVolume = -10;
-let performerSteps = 3;
-let performerRows = 2;
-let numberOfPerformers = performerSteps * performerRows;// automatically generate circular synth based on this
-let performerButtonPositions = []; // position to draw the buttons
+let looperSteps = 3;
+let looperRows = 2;
+let numberOfloopers = looperSteps * looperRows;// automatically generate circular synth based on this
+let looperButtonPositions = []; // position to draw the buttons
 
-let chairSteps = 16;
-let chairRows = 6;
-let chairRowIncrement; // defined in setup
-let chairRowPosition; // defined in setup
+let seqSteps = 8;
+let seqRows = 5;
+let seqRowIncrement; // defined in setup
+let seqRowPosition; // defined in setup
 
-let chairStuff = new Array ();
-for(let i = 0; i < chairRows; i++){
-    chairStuff[i] = new Array ();
+let seqStuff = new Array ();
+for(let i = 0; i < seqRows; i++){
+    seqStuff[i] = new Array ();
 }
 
-
-let totalNumberOfButtons = numberOfPerformers + chairSteps + chairRows;
+let totalNumberOfButtons = numberOfloopers + seqSteps + seqRows;
 
 let endedTouches = []; // array to store ended touches in
 
-let buttonColour = []; // colour of the performer buttons at any given time
-let buttonOffColour; // default off colours for performer buttons
-let buttonOnColour; // default on colours for performer buttons
+let buttonColour = []; // colour of the looper buttons at any given time
+let buttonOffColour; // default off colours for looper buttons
+let buttonOnColour; // default on colours for looper buttons
 let synthState = []; // we need to store whether a note is playing because the synth is polyphonic and it will keep accepting on messages with every touch or moved touch and we won't be able to switch them all off
 let radius; // radius of the buttons
 let offsetT; // to store the difference between x and y readings once menus are taken into account
@@ -39,19 +46,20 @@ let whichKey = [0,0,0,0,0,0,0,0,0]; // array ensures only one trigger per qwerty
 let mouseState = []; // variable to store mouse clicks and drags in
 let mouseClick = false;
 
-let stage_x; // position of stage
-let stage_y; // position of stage
+let looper_x; // position of looper
+let looper_y; // position of looper
 let grassPosition; // position of grass, set in setup as uses p5 function
 
-let stage2image; // current image for these items
+let carpet, seqOn, seqOff, seqStep1, seqStep2, grass, looper, looper2; // to store images in
 
-let carpet, chairOn, chairOff, chairStep1, chairStep2, grass, stage, stage2; // to store images in
+let performerOff = new Array;
+let performerOn = new Array;
 
-let stagewidth;
-let stageheight;
-let chairWidth;
-let chairHeight;
-let stage2width;
+let looperwidth;
+let looperheight;
+let seqWidth;
+let seqHeight;
+let looper2width;
 
 let one = 'loop1_5bars';
 let two = 'loop2_2bars';
@@ -62,7 +70,7 @@ let six = 'loop6_free';
 
 let stepName = new Array;
 
-for(let i = 0; i < chairRows; i++){
+for(let i = 0; i < seqRows; i++){
   stepName[i] = `step${i}`;
 }
 
@@ -75,7 +83,7 @@ const player6 = new Tone.Player().toDestination();
 
 let seqPlayers = new Array;
 
-for(let i = 0; i < chairRows; i++){
+for(let i = 0; i < seqRows; i++){
   seqPlayers[i] = new Tone.Player().toDestination();
 }
 
@@ -95,17 +103,21 @@ let save;
 let bpmShow = false;
 
 let bpmTextSize;
-let optionTextSize;
+let saveTextSize;
+let speedTextSize;
 
 function preload() {
-  carpet = loadImage(`/images/background.jpg`);
-  chairOn = loadImage(`/images/bird_on.png`);
-  chairOff = loadImage(`/images/bird.png`);
-  chairStep1 = loadImage(`/images/bird_icon_yellow.png`);
-  chairStep2 = loadImage(`/images/bird_icon_purple.png`);
-  grass = loadImage(`/images/grass.jpg`);
-  stage = loadImage(`/images/tree.png`);
-  stage2off = loadImage(`/images/tree2_off.png`);
+  carpet = loadImage(`/images/background.png`);
+  seqOn = loadImage(`/images/chairYellow.png`);
+  seqOff = loadImage(`/images/chair.png`);
+  seqStep1 = loadImage(`/images/chairGreen.png`);
+  seqStep2 = loadImage(`/images/chairBlue.png`);
+  grass = carpet;
+  looper = loadImage(`/images/wigmorestage2.png`);
+  for(let i = 0; i < numberOfloopers; i++){
+    performerOff[i] = loadImage(`/images/performerOff${i+1}.png`);
+    performerOn[i] = loadImage(`/images/performerOn${i+1}.png`);
+  }
 
   buffers = new Tone.ToneAudioBuffers({
     urls: {
@@ -120,14 +132,14 @@ function preload() {
     baseUrl: "/sounds/"
   });
 
-  for(let i = 0; i < chairRows; i++){
+  for(let i = 0; i < seqRows; i++){
     seqBuffers[i] = new Tone.ToneAudioBuffer(`/sounds/${stepName[i]}.flac`)
   }
 
 }
 
 function setup() {  // setup p5
-  step = TWO_PI/numberOfPerformers; // in radians the equivalent of 360/6 - this will be used to draw the circles position
+  step = TWO_PI/numberOfloopers; // in radians the equivalent of 360/6 - this will be used to draw the circles position
   console.log(`step = ${step}`);
 
   let masterDiv = document.getElementById("container");
@@ -152,42 +164,42 @@ function setup() {  // setup p5
 
   radius = width/14;
   r = width/5;
-  stage_x = (width/2);
-  stage_y = (height/4);
-  stage2image = stage2off;
+  looper_x = (width/2);
+  looper_y = (height/4);
   grassPosition = (height/10)*9;
-  buttonOffColour = 'rgba(0, 200, 70, 0.3)'; // default off colours for stage buttons
-  buttonOnColour = 'rgba(255, 255, 0, 0.3)'; // default on colours for stage buttons
-  stagewidth = (width/5)*3.5;
-  stageheight = (width/5)*3;
-  chairWidth = width/9;
-  chairHeight = width/12;
-  stage2width = width/6;
-  chairRowIncrement = height/15; // how close are the rows to each other?
-  chairRowPosition = height/2; // where is the sequencer positioned?
+  buttonOffColour = 'rgba(0, 200, 70, 0.3)'; // default off colours for looper buttons
+  buttonOnColour = 'rgba(255, 255, 0, 0.3)'; // default on colours for looper buttons
+  looperwidth = (width/5)*3.5;
+  looperheight = (width/5)*3;
+  seqWidth = width/10;
+  seqHeight = width/13;
+  looper2width = width/6;
+  seqRowIncrement = height/11; // how close are the rows to each other?
+  seqRowPosition = (height/9) * 5; // where is the sequencer positioned on the y axis?
   speed_text_y =  height/10*9.5;
   bpmTextSize = width/8;
-  optionTextSize = width/16;
+  speedTextSize = width/8;
+  saveTextSize = width/16;
   slower = ({
     x: width/10,
-    y: height/10*9.5,
-    text: 'Slower',
+    y: height/10*0.8,
+    text: '-',
     colour: 'rgba(255, 255, 255, 0.9)'
   });
   faster = ({
     x: width/10*9,
-    y: height/10*9.5,
-    text: 'Faster',
+    y: height/10*0.8,
+    text: '+',
     colour: 'rgba(255, 255, 255, 0.9)'
   });
   save = ({
     x: width/2,
-    y: height/10*9.5,
+    y: height/10*0.75,
     text: 'Save',
     colour: 'rgba(255, 255, 255, 0.9)'
   });
 
-  for (let i = 0; i < numberOfPerformers; i++) { // for each button build mouseState default array
+  for (let i = 0; i < numberOfloopers; i++) { // for each button build mouseState default array
     mouseState.push(0);
   }
 
@@ -214,53 +226,53 @@ function welcomeScreen() {
 
 function createButtonPositions() {
 
-  //stage button positions
+  //looper button positions
 
-  let performerStepstart = stage_x - radius*2.5;
-  let stageStepIncrement = radius*2.3;
-  let stageStepDistance = performerStepstart;
-  let stageRowIncrement = radius*2.5;
-  let stageRowPosition = stage_y - radius*2;
+  let looperStepstart = looper_x - radius*2.3;
+  let looperStepIncrement = radius*2.3;
+  let looperStepDistance = looperStepstart;
+  let looperRowIncrement = radius*2.5;
+  let looperRowPosition = looper_y - radius/2;
 
-  for(let i = 0; i < performerRows; i++){
-    for(let i = 0; i < performerSteps; i++){
-      performerButtonPositions.push({
-        x: stageStepDistance,
-        y: stageRowPosition,
+  for(let i = 0; i < looperRows; i++){
+    for(let i = 0; i < looperSteps; i++){
+      looperButtonPositions.push({
+        x: looperStepDistance,
+        y: looperRowPosition,
         state: 0,
         colour: buttonOffColour
       });
-      stageStepDistance = stageStepDistance + stageStepIncrement;
+      looperStepDistance = looperStepDistance + looperStepIncrement;
     }
-    stageStepDistance = performerStepstart;
-    stageRowPosition = stageRowPosition + stageRowIncrement;
+    looperStepDistance = looperStepstart;
+    looperRowPosition = looperRowPosition + looperRowIncrement;
   }
 
-  for(let i = 0; i < performerButtonPositions.length; i++){
+  for(let i = 0; i < looperButtonPositions.length; i++){
     synthState.push(0); //create default state of the synth array
     buttonColour[i] = buttonOffColour;
   }
 
-  //next the positions of the chair sequencer buttons
+  //next the positions of the seq sequencer buttons
 
-  let step = (chairSteps/chairSteps);
-  let chairStepstart = width/(chairSteps*1.5);
-  let chairStepIncrement = width/(chairSteps + (step*0.5));
-  let chairStepDistance = chairStepstart;
-  let chairRowDistance = chairRowIncrement;
+  let step = (seqSteps/seqSteps);
+  let seqStepstart = width/(seqSteps*1.5);
+  let seqStepIncrement = width/(seqSteps + (step*0.5));
+  let seqStepDistance = seqStepstart;
+  let seqRowDistance = seqRowIncrement;
 
-  for(let i = 0; i < chairRows; i++){
-    for(let j = 0; j < chairSteps; j++){
-      chairStuff[i].push({
-        x: chairStepDistance,
-        y: chairRowPosition,
+  for(let i = 0; i < seqRows; i++){
+    for(let j = 0; j < seqSteps; j++){
+      seqStuff[i].push({
+        x: seqStepDistance,
+        y: seqRowPosition,
         state: 0,
-        image: chairOff
+        image: seqOff
       });
-      chairStepDistance = chairStepDistance + chairStepIncrement;
+      seqStepDistance = seqStepDistance + seqStepIncrement;
     }
-    chairStepDistance = chairStepstart;
-    chairRowPosition = chairRowPosition + chairRowIncrement;
+    seqStepDistance = seqStepstart;
+    seqRowPosition = seqRowPosition + seqRowIncrement;
   }
 }
 
@@ -270,44 +282,53 @@ function drawSynth(step) { // instead of using the draw function at 60 frames a 
 
   image(carpet, 0, 0, width, height); // place the carpet image
   imageMode(CENTER);
-  image(stage, stage_x, stage_y + (chairHeight/3), stagewidth, stageheight); // place the stage image
-  imageMode(CORNER);
-  image(grass, 0, grassPosition, width, (height/5)*2); // place the grass image
-  image(stage2image, (width/10)*8, grassPosition - stage2width, stage2width, stage2width);
+  image(looper, looper_x, looper_y + (seqHeight/1.5), looperwidth, looperheight); // place the looper image
+  //image(grass, 0, grassPosition, width, (height/5)*2); // place the grass image
 
-  for (let i = 0; i < numberOfPerformers; i++) { // draw the looper buttons on stage
-    fill(performerButtonPositions[i].colour);
-    ellipse(performerButtonPositions[i].x, performerButtonPositions[i].y, radius * 2);
+  for (let i = 0; i < numberOfloopers; i++) { // draw the looper buttons on looper
+    fill(looperButtonPositions[i].colour);
+    ellipse(looperButtonPositions[i].x, looperButtonPositions[i].y, radius * 2);
+  }
+
+  for (let i = 0; i < numberOfloopers; i++) { // draw the looper buttons on looper
+    if(looperButtonPositions[i].colour === buttonOffColour){
+      image(performerOff[i], looperButtonPositions[i].x, looperButtonPositions[i].y, radius*3, radius*3);
+    }else{
+      image(performerOn[i], looperButtonPositions[i].x, looperButtonPositions[i].y, radius*3, radius*3);
+
+    }
   }
 
   imageMode(CENTER);
 
-  for(let i = 0; i < chairRows; i++){
-    for(let j = 0; j < chairSteps; j++){
-      if((j === step) && (chairStuff[i][j].state === 0)){ // if this is the current step and the step is "off"
-        image(chairStep1, chairStuff[i][j].x, chairStuff[i][j].y, chairWidth, chairHeight); // then yellow chair for this step
-      }else if((j === step) && (chairStuff[i][j].state === 1)){ // if this is the current step and the step is "on"
-        image(chairStep2, chairStuff[i][j].x, chairStuff[i][j].y, chairWidth, chairHeight); // then purple chair for this step
+  for(let i = 0; i < seqRows; i++){
+    for(let j = 0; j < seqSteps; j++){
+      if((j === step) && (seqStuff[i][j].state === 0)){ // if this is the current step and the step is "off"
+        image(seqStep1, seqStuff[i][j].x, seqStuff[i][j].y, seqWidth, seqHeight); // then yellow seq for this step
+      }else if((j === step) && (seqStuff[i][j].state === 1)){ // if this is the current step and the step is "on"
+        image(seqStep2, seqStuff[i][j].x, seqStuff[i][j].y, seqWidth, seqHeight); // then purple seq for this step
       }
       else{
-        image(chairStuff[i][j].image, chairStuff[i][j].x, chairStuff[i][j].y, chairWidth, chairHeight); // otherwise chair colour reflects step state
+        image(seqStuff[i][j].image, seqStuff[i][j].x, seqStuff[i][j].y, seqWidth, seqHeight); // otherwise seq colour reflects step state
       }
     }
   }
 
   textFont('Helvetica');
-  textSize(optionTextSize);
+
+  textSize(speedTextSize);
   fill(slower.colour);
   text(slower.text, slower.x, slower.y);
   fill(faster.colour);
   text(faster.text, faster.x, faster.y);
+  textSize(saveTextSize);
   fill(save.colour);
   text(save.text, save.x, save.y);
 
   if(bpmShow){
     textSize(bpmTextSize);
     fill('rgba(255, 255, 255, 0.7)');
-    text(`BPM ${Math.round(Tone.Transport.bpm.value)}`, width/2, height/2);
+    text(`BPM ${Math.round(Tone.Transport.bpm.value)}`, width/2, (height/3)*2);
   }
 }
 
@@ -406,7 +427,7 @@ function startAudio() {
     }
   );
 
-  for(let i = 0; i < chairRows; i++){
+  for(let i = 0; i < seqRows; i++){
     seqPlayers[i].buffer = seqBuffers[i].get();
     seqPlayers[i].set(
       {
@@ -446,17 +467,17 @@ function startAudio() {
 function handleClick(e){
   if(soundOn) {
 
-    for (let i = 0; i < numberOfPerformers; i++) {
-      let d = dist(mouseX, mouseY, performerButtonPositions[i].x, performerButtonPositions[i].y);
+    for (let i = 0; i < numberOfloopers; i++) {
+      let d = dist(mouseX, mouseY, looperButtonPositions[i].x, looperButtonPositions[i].y);
       if (d < radius) {
         buttonPressed(i);
       }
     }
 
-    for(let i = 0; i < chairRows; i++){
-      for(let j = 0; j < chairSteps; j++){
-        let d = dist(mouseX, mouseY, chairStuff[i][j].x, chairStuff[i][j].y);
-        if (d < chairHeight/2) {
+    for(let i = 0; i < seqRows; i++){
+      for(let j = 0; j < seqSteps; j++){
+        let d = dist(mouseX, mouseY, seqStuff[i][j].x, seqStuff[i][j].y);
+        if (d < seqHeight/2) {
           seqPressed(i, j);
         }
       }
@@ -514,17 +535,17 @@ function handleClick(e){
 
 function seqPressed(row, step) {
 
-  if(chairStuff[row][step].state === 0) { // if the synth is not playing that note at the moment
-    chairStuff[row][step].image = chairOn;
+  if(seqStuff[row][step].state === 0) { // if the synth is not playing that note at the moment
+    seqStuff[row][step].image = seqOn;
     drawSynth();
-    chairStuff[row][step].state = 1; // change the array to reflect that the note is playing
+    seqStuff[row][step].state = 1; // change the array to reflect that the note is playing
   }
   else { // if the synth is playing that note at the moment
-    chairStuff[row][step].image = chairOff;
+    seqStuff[row][step].image = seqOff;
     drawSynth();
-    chairStuff[row][step].state = 0; // change the array to reflect that the note is playing
+    seqStuff[row][step].state = 0; // change the array to reflect that the note is playing
   }
-  console.log(`row${row} step ${step} = ${chairStuff[row][step].state}`);
+  console.log(`row${row} step ${step} = ${seqStuff[row][step].state}`);
 
 
 }
@@ -539,19 +560,19 @@ function setSpeed(tempo) {
 }
 
 function buttonPressed(i) {
-    if(performerButtonPositions[i].state === 0) { // if the synth is not playing that note at the moment
+    if(looperButtonPositions[i].state === 0) { // if the synth is not playing that note at the moment
       playerArray[i].volume.rampTo(theVolume, 2);
-      performerButtonPositions[i].colour = buttonOnColour; //change the colour of the button to on colour
+      looperButtonPositions[i].colour = buttonOnColour; //change the colour of the button to on colour
       drawSynth();
-      performerButtonPositions[i].state = 1; // change the array to reflect that the note is playing
+      looperButtonPositions[i].state = 1; // change the array to reflect that the note is playing
     }
     else { // if the synth is playing that note at the moment
       playerArray[i].volume.rampTo(-100, 2);
-      performerButtonPositions[i].colour = buttonOffColour; //change the colour of the button to off colour
+      looperButtonPositions[i].colour = buttonOffColour; //change the colour of the button to off colour
       drawSynth();
-      performerButtonPositions[i].state = 0; // change the array to reflect that the note is playing
+      looperButtonPositions[i].state = 0; // change the array to reflect that the note is playing
     }
-    console.log(`performerButtonPositions${i} = ${performerButtonPositions[i].state}`);
+    console.log(`looperButtonPositions${i} = ${looperButtonPositions[i].state}`);
 }
 
 let index = 0;
@@ -572,13 +593,13 @@ let index = 0;
     }).toDestination();
 
 function repeat(time) {
-  let _step = index % chairSteps;
+  let _step = index % seqSteps;
   drawSynth(_step)
-  for(let i = 0; i < chairRows; i++) {
+  for(let i = 0; i < seqRows; i++) {
     //console.log(`row ${i} step ${_step} `);
     //note = notes[i];
-    //console.log(`row ${i} step ${_step} ${chairStuff[i][_step].state}`);
-    if(chairStuff[i][_step].state === 1) {
+    //console.log(`row ${i} step ${_step} ${seqStuff[i][_step].state}`);
+    if(seqStuff[i][_step].state === 1) {
       //sampler.triggerAttackRelease(note, '4n', time);
       seqPlayers[i].start();
     }
@@ -604,51 +625,51 @@ function isMouseInsideText(text, textX, textY) {
 var url_ob = new URL(document.URL);
 
 
-let chairSaveSteps = new Array;
-for(let i = 0; i < chairRows; i++){
-  chairSaveSteps[i] = new Array;
+let seqSaveSteps = new Array;
+for(let i = 0; i < seqRows; i++){
+  seqSaveSteps[i] = new Array;
 }
 
-for(let i = 0; i < chairRows; i++){ // setup and initialise the array
-  for(let j = 0; j < chairSteps; j++){
-    chairSaveSteps[i].push(0);
+for(let i = 0; i < seqRows; i++){ // setup and initialise the array
+  for(let j = 0; j < seqSteps; j++){
+    seqSaveSteps[i].push(0);
   }
 }
 
-let performerStepsToSave = new Array;
+let looperStepsToSave = new Array;
 
-for(let i = 0; i < performerButtonPositions.length; i++){
-  performerStepsToSave[i].push(0);
+for(let i = 0; i < looperButtonPositions.length; i++){
+  looperStepsToSave[i].push(0);
 }
 
 
 function saveSeq() {
-  for(let i = 0; i < chairRows; i++){
-    for(let j = 0; j < chairSteps; j++){
-      chairSaveSteps[i][j] = chairStuff[i][j].state;
+  for(let i = 0; i < seqRows; i++){
+    for(let j = 0; j < seqSteps; j++){
+      seqSaveSteps[i][j] = seqStuff[i][j].state;
     }
   }
 
-  for(let i = 0; i < performerButtonPositions.length; i++){
-    performerStepsToSave[i] = performerButtonPositions[i].state;
+  for(let i = 0; i < looperButtonPositions.length; i++){
+    looperStepsToSave[i] = looperButtonPositions[i].state;
   }
 
-  let chairRowsArray = new Array;
-  for(let i = 0; i < chairRows; i++){
-    chairRowsArray[i] = chairSaveSteps[i].join('');
+  let seqRowsArray = new Array;
+  for(let i = 0; i < seqRows; i++){
+    seqRowsArray[i] = seqSaveSteps[i].join('');
   }
-  let _stageRow = performerStepsToSave.join('');
-  let chairHex = new Array;
-  for(let i = 0; i < chairRows; i++){
-    chairHex[i] = parseInt(chairRowsArray[i], 2).toString(16);
+  let _looperRow = looperStepsToSave.join('');
+  let seqHex = new Array;
+  for(let i = 0; i < seqRows; i++){
+    seqHex[i] = parseInt(seqRowsArray[i], 2).toString(16);
   }
-  let stageHex = parseInt(_stageRow, 2).toString(16);
+  let looperHex = parseInt(_looperRow, 2).toString(16);
   let bpmToSave = parseInt(Tone.Transport.bpm.value, 10).toString(16);
   let hexToSave = '';
-  for(let i = 0; i < chairRows; i++){
-    hexToSave = `${hexToSave}${chairHex[i]}_`;
+  for(let i = 0; i < seqRows; i++){
+    hexToSave = `${hexToSave}${seqHex[i]}_`;
   }
-  hexToSave = `${hexToSave}${stageHex}_${bpmToSave}`;
+  hexToSave = `${hexToSave}${looperHex}_${bpmToSave}`;
   console.log(hexToSave);
   url_ob.hash = `#${hexToSave}`;
   var new_url = url_ob.href;
@@ -662,26 +683,26 @@ var savedWork = url_ob.hash; //retrieve saved work from url
 var savedWorkNoHash = savedWork.replace('#', ''); // remove the hash from it leaving only the number
 var savedWorkAsArray = savedWorkNoHash.split('_');
 console.log(savedWorkAsArray);
-var  savedChairRowBinary = new Array;
-for(let i = 0; i < chairRows; i++){
-  savedChairRowBinary[i] = (parseInt(savedWorkAsArray[i], 16).toString(2)); // convert chair row to binary
+var  savedseqRowBinary = new Array;
+for(let i = 0; i < seqRows; i++){
+  savedseqRowBinary[i] = (parseInt(savedWorkAsArray[i], 16).toString(2)); // convert seq row to binary
 }
-var savedchairRow = new Array;
-for(let i = 0; i < chairRows; i++){
-  savedchairRow[i] = savedChairRowBinary[i].split(''); // convert to array
-  console.log(`chair row${i} ${savedchairRow[i]}`);
+var savedseqRow = new Array;
+for(let i = 0; i < seqRows; i++){
+  savedseqRow[i] = savedseqRowBinary[i].split(''); // convert to array
+  console.log(`seq row${i} ${savedseqRow[i]}`);
 }
-var savedstageButtons = (parseInt(savedWorkAsArray[chairRows], 16).toString(2));// convert saved stage buttons to binary
-console.log(`stage row  ${savedstageButtons}`);
-let savedstageButtonsAsArray = savedstageButtons.split(''); // convert to array
-console.log(`savedstageButtonsAsArray ${savedstageButtonsAsArray}`);
-var savedTempo = (parseInt(savedWorkAsArray[chairRows+1], 16).toString(10));// convert tempo to decimal
+var savedlooperButtons = (parseInt(savedWorkAsArray[seqRows], 16).toString(2));// convert saved looper buttons to binary
+console.log(`looper row  ${savedlooperButtons}`);
+let savedlooperButtonsAsArray = savedlooperButtons.split(''); // convert to array
+console.log(`savedlooperButtonsAsArray ${savedlooperButtonsAsArray}`);
+var savedTempo = (parseInt(savedWorkAsArray[seqRows+1], 16).toString(10));// convert tempo to decimal
 console.log(`saved tempo  ${savedTempo}`);
 
-for(let i = numberOfPerformers - 1; i >= 0 ; i--){
+for(let i = numberOfloopers - 1; i >= 0 ; i--){
   let a = [];
-  if(savedstageButtonsAsArray.length > 0){
-    a[i] = savedstageButtonsAsArray.pop();
+  if(savedlooperButtonsAsArray.length > 0){
+    a[i] = savedlooperButtonsAsArray.pop();
     }else{
     a[i] = 0;
     }
@@ -690,13 +711,13 @@ for(let i = numberOfPerformers - 1; i >= 0 ; i--){
   }
 }
 
-for(let i = 0; i < chairRows; i++){
-  console.log(`am i here? chairRow ${i}`);
-  for(let j = chairSteps - 1; j >= 0 ; j--){
+for(let i = 0; i < seqRows; i++){
+  console.log(`am i here? seqRow ${i}`);
+  for(let j = seqSteps - 1; j >= 0 ; j--){
     let a = [];
-    console.log(`savedchairRow ${i} = ${savedchairRow[i]}`);
-    if(savedchairRow[i].length > 0){
-      a[j] = savedchairRow[i].pop();
+    console.log(`savedseqRow ${i} = ${savedseqRow[i]}`);
+    if(savedseqRow[i].length > 0){
+      a[j] = savedseqRow[i].pop();
       }else{
       a[j] = 0;
       }
