@@ -221,7 +221,7 @@ function welcomeScreen() {
   background(150); // background is grey (remember 5 is maximum because of the setup of colorMode)
   textSize(32);
   textAlign(CENTER, CENTER);
-  text("Performance Zone. Touch screen or click mouse to start", width/10, height/10, (width/10) * 8, (height/10) * 8);
+  text("Creation Zone. Touch screen or click mouse to start", width/10, height/10, (width/10) * 8, (height/10) * 8);
 }
 
 function createButtonPositions() {
