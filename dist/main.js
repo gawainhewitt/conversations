@@ -106,6 +106,8 @@ let bpmTextSize;
 let saveTextSize;
 let speedTextSize;
 
+let cnvDimension;
+
 function preload() {
   carpet = loadImage(`/images/background.png`);
   seqOn = loadImage(`/images/chairYellow.png`);
@@ -146,7 +148,7 @@ function setup() {  // setup p5
   let divPos = masterDiv.getBoundingClientRect(); //The returned value is a DOMRect object which is the smallest rectangle which contains the entire element, including its padding and border-width. The left, top, right, bottom, x, y, width, and height properties describe the position and size of the overall rectangle in pixels.
   let masterLeft = divPos.left; // distance from left of screen to left edge of bounding box
   let masterRight = divPos.right; // distance from left of screen to the right edge of bounding box
-  let cnvDimension = masterRight - masterLeft; // size of div -however in some cases this is wrong, so i am now using css !important to set the size and sca;ing - but have kept this to work out size of other elements if needed
+  cnvDimension = masterRight - masterLeft; // size of div -however in some cases this is wrong, so i am now using css !important to set the size and sca;ing - but have kept this to work out size of other elements if needed
 
   console.log("canvas size = " + cnvDimension);
 
@@ -219,7 +221,7 @@ function handleOrientationEvent() {
 
 function welcomeScreen() {
   background(150); // background is grey (remember 5 is maximum because of the setup of colorMode)
-  textSize(32);
+  textSize(cnvDimension/10);
   textAlign(CENTER, CENTER);
   text("Creation Zone. Touch screen or click mouse to start", width/10, height/10, (width/10) * 8, (height/10) * 8);
 }

@@ -1,5 +1,5 @@
 {
-  "name": "imagined_landscapes",
+  "name": "conversations",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
@@ -8,13 +8,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gawainhewitt/imagined_landscapes.git"
+    "url": "git+https://github.com/gawainhewitt/conversations.git"
   },
   "keywords": [],
   "author": "Gawain Hewitt",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gawainhewitt/imagined_landscapes/issues"
+    "url": "https://github.com/gawainhewitt/conversations/issues"
   },
-  "homepage": "https://github.com/gawainhewitt/imagined_landscapes#readme"
+  "homepage": "https://github.com/gawainhewitt/conversations#readme"
 }
