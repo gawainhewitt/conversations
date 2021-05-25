@@ -233,7 +233,7 @@ function handleOrientationEvent() {
 
 function welcomeScreen() {
   background(150); // background is grey (remember 5 is maximum because of the setup of colorMode)
-  textSize(cnvDimension/10);
+  textSize(cnvDimension/30);
   textAlign(CENTER, CENTER);
   text("Touch or click mouse to start. Click on faces or chairs to make your own music. Click Save to share your work", width/10, height/10, (width/10) * 8, (height/10) * 8);
 }
